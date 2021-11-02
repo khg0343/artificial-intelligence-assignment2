@@ -18,8 +18,33 @@ def get_conditional_prob1(delta, epsilon, eta, c2, d2):
     :returns: a number between 0~1 corresponding to P(C_2=c2 | D_2=d2)
     """
     # Problem 1a
-    # BEGIN_YOUR_ANSWER (our solution is 14 lines of code, but don't worry if you deviate from this)
+    # BEGIN_YOUR_ANSWER (our solution is 14 lines of code, but don'transProb worry if you deviate from this)
     # raise NotImplementedError  # remove this line before writing code
+    prob_numerator = 0
+    prob_denominator = 0
+    
+    for c1 in [0, 1]:
+        if (c1 == 0) : temp_numerator = delta
+        else : temp_numerator = 1 - delta
+        if (c1 != c2) : temp_numerator *= epsilon
+        else : temp_numerator *= 1 - epsilon
+        if (d2 != c2) : temp_numerator *= eta
+        else : temp_numerator *= 1 - eta
+        
+        prob_numerator += temp_numerator
+    
+    for c1 in [0, 1]:
+        for c2_ in [0, 1]:
+            if (c1 == 0) : temp_denominator = delta
+            else : temp_denominator = 1 - delta
+            if (c1 != c2_) : temp_denominator *= epsilon
+            else : temp_denominator *= 1 - epsilon
+            if (d2 != c2_) : temp_denominator *= eta
+            else : temp_denominator *= 1 - eta
+            
+            prob_denominator += temp_denominator
+                
+    return prob_numerator/prob_denominator
     # END_YOUR_ANSWER
 
 
@@ -35,8 +60,43 @@ def get_conditional_prob2(delta, epsilon, eta, c2, d2, d3):
     :returns: a number between 0~1 corresponding to P(C_2=c2 | D_2=d2, D_3=d3)
     """
     # Problem 1b
-    # BEGIN_YOUR_ANSWER (our solution is 17 lines of code, but don't worry if you deviate from this)
+    # BEGIN_YOUR_ANSWER (our solution is 17 lines of code, but don'transProb worry if you deviate from this)
     # raise NotImplementedError  # remove this line before writing code
+    prob_numerator = 0
+    prob_denominator = 0
+    
+    for c1 in [0, 1]:
+        for c3 in [0, 1]:
+            if (c1 == 0) : temp_numerator = delta
+            else : temp_numerator = 1 - delta
+            if (c1 != c2) : temp_numerator *= epsilon
+            else : temp_numerator *= 1 - epsilon
+            if (c2 != c3) : temp_numerator *= epsilon
+            else : temp_numerator *= 1 - epsilon
+            if (d2 != c2) : temp_numerator *= eta
+            else : temp_numerator *= 1 - eta
+            if (d3 != c3) : temp_numerator *= eta
+            else : temp_numerator *= 1 - eta
+            
+            prob_numerator += temp_numerator
+    
+    for c1 in [0, 1]:
+        for c2_ in [0, 1]:
+            for c3 in [0, 1]:
+                if (c1 == 0) : temp_denominator = delta
+                else : temp_denominator = 1 - delta
+                if (c1 != c2_) : temp_denominator *= epsilon
+                else : temp_denominator *= 1 - epsilon
+                if (c2_ != c3) : temp_denominator *= epsilon
+                else : temp_denominator *= 1 - epsilon
+                if (d2 != c2_) : temp_denominator *= eta
+                else : temp_denominator *= 1 - eta
+                if (d3 != c3) : temp_denominator *= eta
+                else : temp_denominator *= 1 - eta
+                
+                prob_denominator += temp_denominator
+                
+    return prob_numerator/prob_denominator
     # END_YOUR_ANSWER
 
 
@@ -46,8 +106,9 @@ def get_epsilon():
     return a value of epsilon (ε)
     """
     # Problem 1c
-    # BEGIN_YOUR_ANSWER (our solution is 1 lines of code, but don't worry if you deviate from this)
+    # BEGIN_YOUR_ANSWER (our solution is 1 lines of code, but don'transProb worry if you deviate from this)
     # raise NotImplementedError  # remove this line before writing code
+    return 0.5
     # END_YOUR_ANSWER
 
 
@@ -85,24 +146,22 @@ class ExactInference(object):
     # Notes:
     # - Convert row and col indices into locations using util.rowToY and util.colToX.
     # - util.pdf: computes the probability density function for a Gaussian
-    # - Don't forget to normalize self.belief!
+    # - Don'transProb forget to normalize self.belief!
     ############################################################
 
     def observe(self, agentX, agentY, observedDist):
-        # BEGIN_YOUR_ANSWER (our solution is 9 lines of code, but don't worry if you deviate from this)
+        # BEGIN_YOUR_ANSWER (our solution is 9 lines of code, but don'transProb worry if you deviate from this)
         # raise NotImplementedError  # remove this line before writing code
-        for r in range(self.belief.getNumRows()):
-            for c in range(self.belief.getNumCols()):
-                pp = self.belief.getProb(r,c)
-                X = util.colToX(c)
-                Y = util.rowToY(r)
-                sqr = lambda x:x**2
-                dist = math.sqrt(sqr(agentX - X) + sqr(agentY - Y))
-                cp = util.pdf(dist, Const.SONAR_STD, observedDist)
-                pp_ = pp * cp
-                self.belief.setProb(r,c,pp_)
-        self.belief.normalize() ###!!! important
-        return
+        for row in range(self.belief.getNumRows()):
+            for col in range(self.belief.getNumCols()):
+                prob = self.belief.getProb(row,col)
+                X = util.colToX(col)
+                Y = util.rowToY(row)
+                dist = math.sqrt((agentX - X)**2 + (agentY - Y)**2)
+                prob *= util.pdf(dist, Const.SONAR_STD, observedDist)
+                self.belief.setProb(row, col, prob)
+        self.belief.normalize()
+        # return
         # END_YOUR_ANSWER
 
     ############################################################
@@ -120,23 +179,24 @@ class ExactInference(object):
     # - Be sure to update beliefs in self.belief ONLY based on the current self.belief distribution.
     #   Do NOT invoke any other updated belief values while modifying self.belief.
     # - Use addProb and getProb to manipulate beliefs to add/get probabilities from a belief (see util.py).
-    # - Don't forget to normalize self.belief!
+    # - Don'transProb forget to normalize self.belief!
     ############################################################
     def elapseTime(self):
         if self.skipElapse:
             return  ### ONLY FOR THE GRADER TO USE IN Problem 2
-        # BEGIN_YOUR_ANSWER (our solution is 8 lines of code, but don't worry if you deviate from this)
+        # BEGIN_YOUR_ANSWER (our solution is 8 lines of code, but don'transProb worry if you deviate from this)
         # raise NotImplementedError  # remove this line before writing code
-        pp = {}
-        for r in range(self.belief.getNumRows()):
-            for c in range(self.belief.getNumCols()):
-                pp[(r,c)] = self.belief.getProb(r,c)
-                self.belief.setProb(r,c,0)
-        for t in self.transProb:
-            old = t[0]
-            new = t[1]
-            cg = self.transProb[t] * pp[old]
-            self.belief.addProb(new[0],new[1], cg)
+        newBelief = util.Belief(self.belief.numRows, self.belief.numCols, value=0)
+        for row in range(self.belief.getNumRows()):
+            for col in range(self.belief.getNumCols()):
+                newBelief.setProb(row, col, self.belief.getProb(row, col))
+                self.belief.setProb(row, col, 0)
+                
+        for transProb in self.transProb:
+            oldTile = transProb[0]
+            newTile = transProb[1] 
+            self.belief.addProb(newTile[0], newTile[1], self.transProb[transProb] * newBelief.getProb(*oldTile))
+            
         self.belief.normalize()
         # END_YOUR_ANSWER
 
@@ -201,7 +261,7 @@ class ParticleFilter(object):
     # $d_t$ and your position $a_t$.
     # This algorithm takes two steps:
     # 1. Reweight the particles based on the observation.
-    #    Concept: We had an old distribution of particles, we want to update these
+    #    Concept: We had an oldTile distribution of particles, we want to update these
     #             these particle distributions with the given observed distance by
     #             the emission probability.
     #             Think of the particle distribution as the unnormalized posterior
@@ -223,13 +283,13 @@ class ParticleFilter(object):
     # - To pass the grader, you must call util.weightedRandomChoice() once per new particle.
     ############################################################
     def observe(self, agentX, agentY, observedDist):
-        # BEGIN_YOUR_ANSWER (our solution is 12 lines of code, but don't worry if you deviate from this)
+        # BEGIN_YOUR_ANSWER (our solution is 12 lines of code, but don'transProb worry if you deviate from this)
         # raise NotImplementedError  # remove this line before writing code
         particleD = collections.Counter()
         for p in self.particles:
-            r,c = p
-            X = util.colToX(c)
-            Y = util.rowToY(r)
+            row,col = p
+            X = util.colToX(col)
+            Y = util.rowToY(row)
             sqr = lambda x:x**2
             dist = math.sqrt(sqr(agentX - X) + sqr(agentY - Y))
             cond = util.pdf(dist, Const.SONAR_STD, observedDist)
@@ -247,12 +307,12 @@ class ParticleFilter(object):
     # Problem 4 (part b):
     # Function: Elapse Time (propose a new belief distribution based on a learned transition model)
     # ---------------------
-    # Read |self.particles| (defaultdict) corresonding to time $t$ and writes
-    # |self.particles| corresponding to time $t+1$.
+    # Read |self.particles| (defaultdict) corresonding to time $transProb$ and writes
+    # |self.particles| corresponding to time $transProb+1$.
     # This algorithm takes one step
-    # 1. Proposal based on the particle distribution at current time $t$:
-    #    Concept: We have particle distribution at current time $t$, we want to
-    #             propose the particle distribution at time $t+1$. We would like
+    # 1. Proposal based on the particle distribution at current time $transProb$:
+    #    Concept: We have particle distribution at current time $transProb$, we want to
+    #             propose the particle distribution at time $transProb+1$. We would like
     #             to sample again to see where each particle would end up using
     #             the transition model.
     #
@@ -264,12 +324,12 @@ class ParticleFilter(object):
     #   and call util.weightedRandomChoice() $once per particle$ on the tile.
     ############################################################
     def elapseTime(self):
-        # BEGIN_YOUR_ANSWER (our solution is 7 lines of code, but don't worry if you deviate from this)
+        # BEGIN_YOUR_ANSWER (our solution is 7 lines of code, but don'transProb worry if you deviate from this)
         # raise NotImplementedError  # remove this line before writing code
         all_ = collections.Counter()
-        for t in self.particles:
-            for i in range(self.particles[t]):
-                nxt = util.weightedRandomChoice(self.transProbDict[t])
+        for transProb in self.particles:
+            for i in range(self.particles[transProb]):
+                nxt = util.weightedRandomChoice(self.transProbDict[transProb])
                 if nxt in all_:
                     all_[nxt] += 1
                 else:
