@@ -18,7 +18,7 @@ def get_conditional_prob1(delta, epsilon, eta, c2, d2):
     :returns: a number between 0~1 corresponding to P(C_2=c2 | D_2=d2)
     """
     # Problem 1a
-    # BEGIN_YOUR_ANSWER (our solution is 14 lines of code, but don'transProb worry if you deviate from this)
+    # BEGIN_YOUR_ANSWER (our solution is 14 lines of code, but don't worry if you deviate from this)
     # raise NotImplementedError  # remove this line before writing code
     prob_numerator = 0
     prob_denominator = 0
@@ -60,7 +60,7 @@ def get_conditional_prob2(delta, epsilon, eta, c2, d2, d3):
     :returns: a number between 0~1 corresponding to P(C_2=c2 | D_2=d2, D_3=d3)
     """
     # Problem 1b
-    # BEGIN_YOUR_ANSWER (our solution is 17 lines of code, but don'transProb worry if you deviate from this)
+    # BEGIN_YOUR_ANSWER (our solution is 17 lines of code, but don't worry if you deviate from this)
     # raise NotImplementedError  # remove this line before writing code
     prob_numerator = 0
     prob_denominator = 0
@@ -106,7 +106,7 @@ def get_epsilon():
     return a value of epsilon (ε)
     """
     # Problem 1c
-    # BEGIN_YOUR_ANSWER (our solution is 1 lines of code, but don'transProb worry if you deviate from this)
+    # BEGIN_YOUR_ANSWER (our solution is 1 lines of code, but don't worry if you deviate from this)
     # raise NotImplementedError  # remove this line before writing code
     return 0.5
     # END_YOUR_ANSWER
@@ -146,11 +146,11 @@ class ExactInference(object):
     # Notes:
     # - Convert row and col indices into locations using util.rowToY and util.colToX.
     # - util.pdf: computes the probability density function for a Gaussian
-    # - Don'transProb forget to normalize self.belief!
+    # - Don't forget to normalize self.belief!
     ############################################################
 
     def observe(self, agentX, agentY, observedDist):
-        # BEGIN_YOUR_ANSWER (our solution is 9 lines of code, but don'transProb worry if you deviate from this)
+        # BEGIN_YOUR_ANSWER (our solution is 9 lines of code, but don't worry if you deviate from this)
         # raise NotImplementedError  # remove this line before writing code
         for row in range(self.belief.getNumRows()):
             for col in range(self.belief.getNumCols()):
@@ -179,25 +179,18 @@ class ExactInference(object):
     # - Be sure to update beliefs in self.belief ONLY based on the current self.belief distribution.
     #   Do NOT invoke any other updated belief values while modifying self.belief.
     # - Use addProb and getProb to manipulate beliefs to add/get probabilities from a belief (see util.py).
-    # - Don'transProb forget to normalize self.belief!
+    # - Don't forget to normalize self.belief!
     ############################################################
     def elapseTime(self):
         if self.skipElapse:
             return  ### ONLY FOR THE GRADER TO USE IN Problem 2
-        # BEGIN_YOUR_ANSWER (our solution is 8 lines of code, but don'transProb worry if you deviate from this)
+        # BEGIN_YOUR_ANSWER (our solution is 8 lines of code, but don't worry if you deviate from this)
         # raise NotImplementedError  # remove this line before writing code
-        newBelief = util.Belief(self.belief.numRows, self.belief.numCols, value=0)
-        for row in range(self.belief.getNumRows()):
-            for col in range(self.belief.getNumCols()):
-                newBelief.setProb(row, col, self.belief.getProb(row, col))
-                self.belief.setProb(row, col, 0)
-                
-        for transProb in self.transProb:
-            oldTile = transProb[0]
-            newTile = transProb[1] 
-            self.belief.addProb(newTile[0], newTile[1], self.transProb[transProb] * newBelief.getProb(*oldTile))
-            
-        self.belief.normalize()
+        newBelief = util.Belief(self.belief.getNumRows(), self.belief.getNumCols(), 0)                
+        for (oldTile, newTile) in self.transProb:
+            newBelief.addProb(newTile[0], newTile[1], self.belief.getProb(oldTile[0], oldTile[1])*self.transProb[(oldTile, newTile)])
+        newBelief.normalize()
+        self.belief = newBelief
         # END_YOUR_ANSWER
 
     # Function: Get Belief
@@ -283,22 +276,22 @@ class ParticleFilter(object):
     # - To pass the grader, you must call util.weightedRandomChoice() once per new particle.
     ############################################################
     def observe(self, agentX, agentY, observedDist):
-        # BEGIN_YOUR_ANSWER (our solution is 12 lines of code, but don'transProb worry if you deviate from this)
+        # BEGIN_YOUR_ANSWER (our solution is 12 lines of code, but don't worry if you deviate from this)
         # raise NotImplementedError  # remove this line before writing code
-        particleD = collections.Counter()
-        for p in self.particles:
-            row,col = p
+        newParticle = collections.Counter()
+        for tile in self.particles:
+            prob = self.particles[tile]
+            row, col = tile
             X = util.colToX(col)
             Y = util.rowToY(row)
-            sqr = lambda x:x**2
-            dist = math.sqrt(sqr(agentX - X) + sqr(agentY - Y))
-            cond = util.pdf(dist, Const.SONAR_STD, observedDist)
-            pp_ = self.particles[p]*cond
-            particleD[p] = pp_
+            dist = math.sqrt((agentX - X)**2 + (agentY - Y)**2)
+            prob *= util.pdf(dist, Const.SONAR_STD, observedDist)
+            newParticle[tile] = prob
+            
         self.particles = collections.Counter()
         for i in range(self.NUM_PARTICLES):
-            p = util.weightedRandomChoice(particleD)
-            self.particles[p] += 1
+            tile = util.weightedRandomChoice(newParticle)
+            self.particles[tile] += 1
 
         # END_YOUR_ANSWER
         self.updateBelief()
@@ -307,12 +300,12 @@ class ParticleFilter(object):
     # Problem 4 (part b):
     # Function: Elapse Time (propose a new belief distribution based on a learned transition model)
     # ---------------------
-    # Read |self.particles| (defaultdict) corresonding to time $transProb$ and writes
-    # |self.particles| corresponding to time $transProb+1$.
+    # Read |self.particles| (defaultdict) corresonding to time $t$ and writes
+    # |self.particles| corresponding to time $t+1$.
     # This algorithm takes one step
-    # 1. Proposal based on the particle distribution at current time $transProb$:
-    #    Concept: We have particle distribution at current time $transProb$, we want to
-    #             propose the particle distribution at time $transProb+1$. We would like
+    # 1. Proposal based on the particle distribution at current time $t$:
+    #    Concept: We have particle distribution at current time $t$, we want to
+    #             propose the particle distribution at time $t+1$. We would like
     #             to sample again to see where each particle would end up using
     #             the transition model.
     #
@@ -324,17 +317,17 @@ class ParticleFilter(object):
     #   and call util.weightedRandomChoice() $once per particle$ on the tile.
     ############################################################
     def elapseTime(self):
-        # BEGIN_YOUR_ANSWER (our solution is 7 lines of code, but don'transProb worry if you deviate from this)
+        # BEGIN_YOUR_ANSWER (our solution is 7 lines of code, but don't worry if you deviate from this)
         # raise NotImplementedError  # remove this line before writing code
-        all_ = collections.Counter()
-        for transProb in self.particles:
-            for i in range(self.particles[transProb]):
-                nxt = util.weightedRandomChoice(self.transProbDict[transProb])
-                if nxt in all_:
-                    all_[nxt] += 1
+        newParticle = collections.Counter()
+        for tile in self.particles:
+            for i in range(self.particles[tile]):
+                newTile = util.weightedRandomChoice(self.transProbDict[tile])
+                if newTile in newParticle:
+                    newParticle[newTile] += 1
                 else:
-                    all_[nxt] = 1
-        self.particles = all_
+                    newParticle[newTile] = 1
+        self.particles = newParticle
         # END_YOUR_ANSWER
 
     # Function: Get Belief
